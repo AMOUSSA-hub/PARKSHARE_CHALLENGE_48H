@@ -1,5 +1,7 @@
+version: '3.8'
+
 services:
-  # --- 1. LE REVERSE PROXY (Le seul exposé sur Internet) ---
+  # --- 1. LE REVERSE PROXY ---
   proxy:
     image: nginx:alpine
     container_name: parkshare-proxy
@@ -14,7 +16,7 @@ services:
       - api
     restart: unless-stopped
 
-  # --- 2. LA BASE DE DONNÉES (Isolée) ---
+  # --- 2. LA BASE DE DONNÉES ---
   db:
     image: postgres:15-alpine
     container_name: parkshare-db
@@ -39,17 +41,18 @@ services:
       - parkshare_net
     depends_on:
       - db
+    volumes:
+      # FIX: On monte le dossier data pour que l'API trouve les CSV [cite: 31, 33]
+      - ../data:/data
     restart: unless-stopped
 
-  # --- 4. LE FRONTEND (React/Vite) ---
+  # --- 4. LE FRONTEND (React) ---
   frontend:
     build: 
       context: ../app/frontend
     container_name: parkshare-frontend
-    command: npm run dev -- --host    # <-- On force l'ouverture du port (Correction erreur 502)
     environment:
       VITE_API_URL: http://localhost/api
-      HOST: "0.0.0.0"                 # <-- On autorise Vite à écouter sur le réseau Docker
     networks:
       - parkshare_net
     depends_on:

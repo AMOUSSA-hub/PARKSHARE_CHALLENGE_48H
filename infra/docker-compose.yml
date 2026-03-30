@@ -1,53 +1,65 @@
-version: '3.8'
-
 services:
-  # --- TON AJOUT INFRA : LE REVERSE PROXY ---
+  # --- 1. LE REVERSE PROXY (Le seul exposé sur Internet) ---
   proxy:
     image: nginx:alpine
     container_name: parkshare-proxy
     ports:
-      - "80:80"  # Le SEUL port ouvert sur Internet !
+      - "80:80"  
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - parkshare_net
     depends_on:
       - frontend
       - api
     restart: unless-stopped
 
-  # --- LES SERVICES DU DEV (Sécurisés) ---
+  # --- 2. LA BASE DE DONNÉES (Isolée) ---
   db:
     image: postgres:15-alpine
     container_name: parkshare-db
     environment:
-      POSTGRES_USER: parkshare_user
-      POSTGRES_PASSWORD: parkshare_password
-      POSTGRES_DB: parkshare
-    # J'AI SUPPRIMÉ LES PORTS ICI POUR LA SÉCURITÉ !
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    networks:
+      - parkshare_net
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # --- 3. LE BACKEND (API) ---
   api:
     build: 
-      context: ../app/api
+      context: ../app
     container_name: parkshare-api
-    # J'AI SUPPRIMÉ LES PORTS ICI AUSSI !
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    networks:
+      - parkshare_net
     depends_on:
       - db
     restart: unless-stopped
 
+  # --- 4. LE FRONTEND (React/Vite) ---
   frontend:
     build: 
       context: ../app/frontend
     container_name: parkshare-frontend
-    # J'AI SUPPRIMÉ LES PORTS ICI AUSSI (Nginx fait le relais) !
+    command: npm run dev -- --host    # <-- On force l'ouverture du port (Correction erreur 502)
     environment:
-      VITE_API_URL: http://localhost/api  # Modifié pour passer par Nginx
+      VITE_API_URL: http://localhost/api
+      HOST: "0.0.0.0"                 # <-- On autorise Vite à écouter sur le réseau Docker
+    networks:
+      - parkshare_net
     depends_on:
       - api
     restart: unless-stopped
 
+# --- RÉSEAU ET VOLUMES ---
+networks:
+  parkshare_net:
+    driver: bridge
+
 volumes:
-  pg-data:
+  pgdata:

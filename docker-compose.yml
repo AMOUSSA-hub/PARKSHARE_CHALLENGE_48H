@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: parkshare_db
+    environment:
+      POSTGRES_USER: parkshare_user
+      POSTGRES_PASSWORD: parkshare_password
+      POSTGRES_DB: parkshare
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

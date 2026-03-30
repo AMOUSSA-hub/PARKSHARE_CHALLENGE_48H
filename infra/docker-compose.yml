@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # 1. Le Reverse Proxy (Nginx) - Le seul accessible depuis Internet
+  proxy:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    networks:
+      - front-tier
+    depends_on:
+      - app
+
+  # 2. L'Application (Le code de ton équipe Dev/Data)
+  app:
+    build: ../app
+    networks:
+      - front-tier
+      - back-tier
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+  # 3. La Base de Données (Totalement isolée d'Internet)
+  db:
+    image: postgres:15-alpine  # On met PostgreSQL par défaut pour l'instant
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    networks:
+      - back-tier
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+# Les réseaux virtuels pour la sécurité (Isolation)
+networks:
+  front-tier: # Réseau public (Proxy <-> App)
+  back-tier:  # Réseau privé (App <-> Base de données)
+
+# Les volumes pour ne pas perdre la data au redémarrage
+volumes:
+  db-data:

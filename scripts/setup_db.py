@@ -18,7 +18,7 @@ SQLITE_DB_PATH = os.path.join(BASE_DIR, "data", "parkshare.db")
 
 # Postgres default credentials from docker-compose
 PG_CONFIG = {
-    "host": "localhost",
+    "host": os.environ.get("POSTGRES_HOST", "db"),
     "port": 5432,
     "user": "parkshare",
     "password": "parkshare2024",

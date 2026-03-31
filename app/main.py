@@ -23,7 +23,7 @@ from psycopg2.extras import RealDictCursor
 
 # Configuration par défaut (correspond au docker-compose)
 PG_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
+    "host": os.getenv("DB_HOST", "db"),
     "port": int(os.getenv("DB_PORT", 5432)),
     "user": os.getenv("DB_USER", "parkshare_user"),
     "password": os.getenv("DB_PASSWORD", "parkshare_password"),

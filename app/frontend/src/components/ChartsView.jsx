@@ -45,12 +45,32 @@ const pieOptions = {
 };
 
 function ChartsView({ distribution, departements, zones }) {
-  // Chart 1: Distribution
+  // Chart 1: Distribution (recalculated from current zones)
+  const calculateDistribution = () => {
+    const bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const labels = ["0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100"];
+    const values = new Array(labels.length).fill(0);
+
+    zones.forEach(z => {
+      const score = z.score_total;
+      for (let i = 0; i < bins.length - 1; i++) {
+        if (score >= bins[i] && (i === bins.length - 2 ? score <= bins[i+1] : score < bins[i+1])) {
+          values[i]++;
+          break;
+        }
+      }
+    });
+
+    return { labels, values };
+  };
+
+  const currentDist = calculateDistribution();
+
   const distData = {
-    labels: distribution.labels,
+    labels: currentDist.labels,
     datasets: [{
       label: 'Nombre de communes',
-      data: distribution.values,
+      data: currentDist.values,
       backgroundColor: 'rgba(99, 102, 241, 0.6)',
       borderColor: '#6366f1',
       borderWidth: 1,
@@ -74,12 +94,33 @@ function ChartsView({ distribution, departements, zones }) {
     }]
   };
 
-  // Chart 3: Depts
+  // Chart 3: Depts (recalculated from current zones)
+  const calculateDeptStats = () => {
+    const stats = {};
+    zones.forEach(z => {
+      if (!stats[z.nom_departement]) {
+        stats[z.nom_departement] = { sum: 0, count: 0 };
+      }
+      stats[z.nom_departement].sum += z.score_total;
+      stats[z.nom_departement].count++;
+    });
+
+    return Object.entries(stats)
+      .map(([name, s]) => ({
+        nom_departement: name,
+        score_moyen: (s.sum / s.count).toFixed(1)
+      }))
+      .sort((a, b) => b.score_moyen - a.score_moyen)
+      .slice(0, 10);
+  };
+
+  const currentDepts = calculateDeptStats();
+
   const departementsData = {
-    labels: departements.map(d => d.nom_departement),
+    labels: currentDepts.map(d => d.nom_departement),
     datasets: [{
       label: 'Score moyen',
-      data: departements.map(d => d.score_moyen),
+      data: currentDepts.map(d => d.score_moyen),
       backgroundColor: 'rgba(139, 92, 246, 0.6)',
       borderColor: '#8b5cf6',
       borderWidth: 1,

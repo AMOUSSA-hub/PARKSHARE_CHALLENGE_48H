@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Sidebar({ filters, setFilters, departements, topZones, onSelectZone }) {
+function Sidebar({ filters, setFilters, departements, topZones, onSelectZone, onSearch, isSearching }) {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
@@ -66,7 +66,23 @@ function Sidebar({ filters, setFilters, departements, topZones, onSelectZone }) 
           />
         </div>
         
-        <button onClick={resetFilters} className="btn-reset">Réinitialiser</button>
+        <button 
+          onClick={onSearch} 
+          className="btn-search" 
+          disabled={isSearching}
+        >
+          {isSearching ? 'Recherche...' : (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: '16px', height: '16px', marginRight: '8px'}}>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              Rechercher
+            </>
+          )}
+        </button>
+        
+        <button onClick={resetFilters} className="btn-reset" disabled={isSearching}>Réinitialiser</button>
       </section>
 
       <section className="sidebar-section">

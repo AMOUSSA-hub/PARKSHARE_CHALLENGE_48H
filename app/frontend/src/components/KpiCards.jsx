@@ -16,7 +16,7 @@ function KpiCards({ kpis }) {
       <div className="kpi-card" id="kpi-score-max">
         <div className="kpi-icon">📈</div>
         <div className="kpi-info">
-          <span className="kpi-value">{kpis.score_max || 0}</span>
+          <span className="kpi-value">{Number(kpis.score_max).toLocaleString()}</span>
           <span className="kpi-label">Score maximum</span>
         </div>
       </div>
@@ -24,7 +24,7 @@ function KpiCards({ kpis }) {
       <div className="kpi-card" id="kpi-score-moyen">
         <div className="kpi-icon">📊</div>
         <div className="kpi-info">
-          <span className="kpi-value">{kpis.score_moyen || 0}</span>
+          <span className="kpi-value">{kpis.score_moyen}</span>
           <span className="kpi-label">Score moyen</span>
         </div>
       </div>
@@ -32,7 +32,7 @@ function KpiCards({ kpis }) {
       <div className="kpi-card" id="kpi-excellent">
         <div className="kpi-icon">🟢</div>
         <div className="kpi-info">
-          <span className="kpi-value">{kpis.nb_zones_excellent || 0}</span>
+          <span className="kpi-value">{Number(kpis.nb_zones_excellent).toLocaleString()}</span>
           <span className="kpi-label">Zones « Excellent »</span>
         </div>
       </div>

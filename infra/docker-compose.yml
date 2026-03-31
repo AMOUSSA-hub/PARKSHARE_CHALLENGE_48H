@@ -1,44 +1,68 @@
 version: '3.8'
 
 services:
-  # 1. Le Reverse Proxy (Nginx) - Le seul accessible depuis Internet
+  # --- 1. LE REVERSE PROXY ---
   proxy:
-    image: nginx:latest
+    image: nginx:alpine
+    container_name: parkshare-proxy
     ports:
-      - "80:80"
+      - "80:80"  
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - front-tier
+      - parkshare_net
     depends_on:
-      - app
+      - frontend
+      - api
+    restart: unless-stopped
 
-  # 2. L'Application (Le code de ton équipe Dev/Data)
-  app:
-    build: ../app
+  # --- 2. LA BASE DE DONNÉES ---
+  db:
+    image: postgres:15-alpine
+    container_name: parkshare-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     networks:
-      - front-tier
-      - back-tier
+      - parkshare_net
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # --- 3. LE BACKEND (API) ---
+  api:
+    build: 
+      context: ../app
+    container_name: parkshare-api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    networks:
+      - parkshare_net
     depends_on:
       - db
-    env_file:
-      - .env
-
-  # 3. La Base de Données (Totalement isolée d'Internet)
-  db:
-    image: postgres:15-alpine  # On met PostgreSQL par défaut pour l'instant
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    networks:
-      - back-tier
     volumes:
-      - db-data:/var/lib/postgresql/data
+      # FIX: On monte le dossier data pour que l'API trouve les CSV [cite: 31, 33]
+      - ../data:/data
+    restart: unless-stopped
 
-# Les réseaux virtuels pour la sécurité (Isolation)
+  # --- 4. LE FRONTEND (React) ---
+  frontend:
+    build: 
+      context: ../app/frontend
+    container_name: parkshare-frontend
+    environment:
+      VITE_API_URL: http://localhost/api
+    networks:
+      - parkshare_net
+    depends_on:
+      - api
+    restart: unless-stopped
+
+# --- RÉSEAU ET VOLUMES ---
 networks:
-  front-tier: # Réseau public (Proxy <-> App)
-  back-tier:  # Réseau privé (App <-> Base de données)
+  parkshare_net:
+    driver: bridge
 
-# Les volumes pour ne pas perdre la data au redémarrage
 volumes:
-  db-data:
+  pgdata:

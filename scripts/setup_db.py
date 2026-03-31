@@ -12,7 +12,7 @@ except ImportError:
     POSTGRES_AVAILABLE = False
 
 # Configuration
-BASE_DIR = "/home/amous/Documents/Ynov/PARKSHARE_CHALLENGE_48H"
+BASE_DIR = "/workspace/"
 CSV_PATH = os.path.join(BASE_DIR, "data", "scoring_communes.csv")
 SQLITE_DB_PATH = os.path.join(BASE_DIR, "data", "parkshare.db")
 
@@ -20,8 +20,8 @@ SQLITE_DB_PATH = os.path.join(BASE_DIR, "data", "parkshare.db")
 PG_CONFIG = {
     "host": "localhost",
     "port": 5432,
-    "user": "parkshare_user",
-    "password": "parkshare_password",
+    "user": "parkshare",
+    "password": "parkshare2024",
     "database": "parkshare"
 }
 

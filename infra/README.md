@@ -63,18 +63,16 @@ docker compose down
 
 Le dashboard est accessible depuis l'extérieur via un port forwarding NAT configuré sur le nœud Proxmox :
 
-- **URL publique** : `http://51.77.216.208:8080`
-- **Mécanisme** : Le nœud Proxmox redirige le port `8080` (vmbr0, IP publique) vers le port `80` de la VM (vmbr1, réseau interne `10.0.0.10`).
+- **URL publique** : `http://51.77.216.208`
+- **Mécanisme** : Mécanisme : Le nœud Proxmox redirige le port 80 (vmbr0, IP publique) vers le port 80 de la VM (vmbr1, réseau interne 10.0.0.10).
 
 ### Règles iptables sur le nœud Proxmox
 
 ```bash
-iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 8080 -j DNAT --to-destination 10.0.0.10:80
+iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 80 -j DNAT --to-destination 10.0.0.10:80
 iptables -A FORWARD -p tcp -d 10.0.0.10 --dport 80 -j ACCEPT
 iptables -t nat -A POSTROUTING -d 10.0.0.10 -o vmbr1 -j MASQUERADE
 echo 1 > /proc/sys/net/ipv4/ip_forward
-```
-
 ## Configuration Nginx
 
 Le fichier `nginx/default.conf` définit le routage :

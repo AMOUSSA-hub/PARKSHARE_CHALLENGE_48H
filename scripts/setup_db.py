@@ -12,7 +12,7 @@ except ImportError:
     POSTGRES_AVAILABLE = False
 
 # Configuration
-BASE_DIR = "/home/amous/Documents/Ynov/PARKSHARE_CHALLENGE_48H"
+BASE_DIR = "C:/Users/rafik/Documents/GitHub/PARKSHARE_CHALLENGE_48H/"
 CSV_PATH = os.path.join(BASE_DIR, "data", "scoring_communes.csv")
 SQLITE_DB_PATH = os.path.join(BASE_DIR, "data", "parkshare.db")
 

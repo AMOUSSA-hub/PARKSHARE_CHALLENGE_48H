@@ -18,6 +18,7 @@ export async function fetchZones(filters = {}) {
   if (filters.categorie) params.categorie = filters.categorie;
   if (filters.search) params.search = filters.search;
   if (filters.limit) params.limit = filters.limit;
+  if (filters.offset) params.offset = filters.offset;
   if (filters.sortBy) params.sort_by = filters.sortBy;
   if (filters.sortOrder) params.sort_order = filters.sortOrder;
 

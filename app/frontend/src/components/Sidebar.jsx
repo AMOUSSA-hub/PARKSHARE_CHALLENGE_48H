@@ -1,13 +1,26 @@
 import React from 'react';
 
-function Sidebar({ filters, setFilters, departements, topZones, onSelectZone, onSearch, isSearching }) {
+function Sidebar({ filters, departements, onSelectZone, onSearch, isSearching }) {
+  const [localFilters, setLocalFilters] = React.useState(filters);
+
+  // Sync potential outside filter resets (like App's initial load)
+  React.useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setLocalFilters(prev => ({ ...prev, [name]: value }));
   };
 
   const resetFilters = () => {
-    setFilters({ departement: '', scoreMin: 0, categorie: '', search: '' });
+    const defaultFilters = { departement: '', scoreMin: 0, categorie: '', search: '' };
+    setLocalFilters(defaultFilters);
+    onSearch(defaultFilters);
+  };
+
+  const handleSearchClick = () => {
+    onSearch(localFilters);
   };
 
   return (
@@ -25,7 +38,7 @@ function Sidebar({ filters, setFilters, departements, topZones, onSelectZone, on
             id="search" 
             name="search"
             placeholder="Nom de commune..." 
-            value={filters.search}
+            value={localFilters.search}
             onChange={handleFilterChange}
             autoComplete="off" 
           />
@@ -33,7 +46,7 @@ function Sidebar({ filters, setFilters, departements, topZones, onSelectZone, on
         
         <div className="filter-group">
           <label htmlFor="departement">Département</label>
-          <select id="departement" name="departement" value={filters.departement} onChange={handleFilterChange}>
+          <select id="departement" name="departement" value={localFilters.departement} onChange={handleFilterChange}>
             <option value="">Tous</option>
             {departements.map(d => (
               <option key={d.code_departement} value={d.code_departement}>
@@ -45,29 +58,17 @@ function Sidebar({ filters, setFilters, departements, topZones, onSelectZone, on
         
         <div className="filter-group">
           <label htmlFor="categorie">Catégorie</label>
-          <select id="categorie" name="categorie" value={filters.categorie} onChange={handleFilterChange}>
+          <select id="categorie" name="categorie" value={localFilters.categorie} onChange={handleFilterChange}>
             <option value="">Toutes</option>
-            <option value="Excellent">🟢 Excellent</option>
-            <option value="Bon">🔵 Bon</option>
-            <option value="Moyen">🟡 Moyen</option>
-            <option value="Faible">🔴 Faible</option>
+            <option value="Excellent">🟢 Excellent (≥ 11.5)</option>
+            <option value="Bon">🔵 Bon (8.5 - 11.5)</option>
+            <option value="Moyen">🟡 Moyen (6.0 - 8.5)</option>
+            <option value="Faible">🔴 Faible (&lt; 6.0)</option>
           </select>
         </div>
         
-        <div className="filter-group">
-          <label htmlFor="scoreMin">Score minimum : {filters.scoreMin}</label>
-          <input 
-            type="range" 
-            id="scoreMin" 
-            name="scoreMin"
-            min="0" max="100" step="1" 
-            value={filters.scoreMin}
-            onChange={handleFilterChange}
-          />
-        </div>
-        
         <button 
-          onClick={onSearch} 
+          onClick={handleSearchClick} 
           className="btn-search" 
           disabled={isSearching}
         >
@@ -83,23 +84,6 @@ function Sidebar({ filters, setFilters, departements, topZones, onSelectZone, on
         </button>
         
         <button onClick={resetFilters} className="btn-reset" disabled={isSearching}>Réinitialiser</button>
-      </section>
-
-      <section className="sidebar-section">
-        <h2 className="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          Top Zones
-        </h2>
-        <div className="classement-list">
-          {topZones.map((zone, idx) => (
-            <div key={zone.code_commune} className="classement-item" onClick={() => onSelectZone(zone)}>
-              <span className={`classement-rank ${idx < 3 ? `top-${idx+1}` : ''}`}>#{idx + 1}</span>
-              <span className="classement-name">{zone.nom_commune}</span>
-              <span className="classement-score">{zone.score_total}</span>
-            </div>
-          ))}
-          {topZones.length === 0 && <span style={{fontSize: '12px', color: 'var(--text-muted)'}}>Aucune zone trouvée</span>}
-        </div>
       </section>
     </aside>
   );

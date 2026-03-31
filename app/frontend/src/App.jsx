@@ -17,6 +17,8 @@ function App() {
   const [correlation, setCorrelation] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  const PAGE_SIZE = 25;
+
   // State for filters
   const [filters, setFilters] = useState({
     departement: '',
@@ -24,6 +26,9 @@ function App() {
     categorie: '',
     search: '',
   });
+
+  const [page, setPage] = useState(1);
+  const [totalZones, setTotalZones] = useState(0);
 
   // State for modal
   const [selectedZone, setSelectedZone] = useState(null);
@@ -42,16 +47,19 @@ function App() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [deptData, distData, corrData, zonesData] = await Promise.all([
+      const [deptData, distData, corrData, zonesData, kpisData] = await Promise.all([
         fetchDepartements(),
         fetchDistribution(),
         fetchCorrelation(),
-        fetchZones(filters)
+        fetchZones({ ...filters, limit: PAGE_SIZE, offset: 0 }),
+        fetchKpis()
       ]);
       setDepartements(deptData.departements);
       setDistribution(distData);
       setCorrelation(corrData);
       setZones(zonesData.zones);
+      setTotalZones(zonesData.total);
+      setKpis(kpisData);
     } catch (error) {
       console.error("Error loading initial data:", error);
     } finally {
@@ -59,11 +67,19 @@ function App() {
     }
   };
 
-  const loadZones = async () => {
+  const loadZones = async (newFilters = null, newPage = null) => {
     try {
       setSearching(true);
-      const data = await fetchZones(filters);
+      
+      const targetFilters = newFilters || filters;
+      const targetPage = newPage !== null ? newPage : (newFilters ? 1 : page);
+      const offset = (targetPage - 1) * PAGE_SIZE;
+
+      const data = await fetchZones({ ...targetFilters, limit: PAGE_SIZE, offset });
       setZones(data.zones);
+      setTotalZones(data.total);
+      setFilters(targetFilters);
+      setPage(targetPage);
     } catch (error) {
       console.error("Error loading zones:", error);
     } finally {
@@ -125,11 +141,11 @@ function App() {
         </div>
         <div className="header-right">
           <div className="header-badge">
-            <span className="badge-value">{derivedKpis?.total_communes || 0}</span>
+            <span className="badge-value">{kpis?.total_communes || 0}</span>
             <span className="badge-label">Communes</span>
           </div>
           <div className="header-badge">
-            <span className="badge-value">{derivedKpis?.total_coproprietes.toLocaleString() || 0}</span>
+            <span className="badge-value">{kpis?.total_coproprietes?.toLocaleString() || 0}</span>
             <span className="badge-label">Copropriétés</span>
           </div>
         </div>
@@ -138,9 +154,7 @@ function App() {
       <main className="app-main">
         <Sidebar 
           filters={filters} 
-          setFilters={setFilters} 
           departements={departements}
-          topZones={zones.slice(0, 10)}
           onSelectZone={(zone) => {
             setSelectedZone(zone);
             setSidebarOpen(false); // Auto-close on selects for mobile
@@ -170,10 +184,18 @@ function App() {
               distribution={distribution} 
               departements={departements.slice(0, 10)} 
               zones={zones}
+              onSelectZone={setSelectedZone}
             />
           )}
 
-          <DataTable zones={zones} onSelectZone={setSelectedZone} />
+          <DataTable 
+            zones={zones} 
+            totalZones={totalZones}
+            page={page}
+            pageSize={PAGE_SIZE}
+            onPageChange={(newPage) => loadZones(null, newPage)}
+            onSelectZone={setSelectedZone} 
+          />
         </div>
       </main>
 

@@ -44,7 +44,7 @@ const pieOptions = {
   }
 };
 
-function ChartsView({ distribution, departements, zones }) {
+function ChartsView({ distribution, departements, zones, onSelectZone }) {
   // Chart 1: Distribution (recalculated from current zones)
   const calculateDistribution = () => {
     const bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -147,33 +147,27 @@ function ChartsView({ distribution, departements, zones }) {
 
   return (
     <section className="charts-section">
-      <div className="chart-card">
-        <h3>Distribution des Scores</h3>
-        <div style={{ height: '250px' }}>
-          <Bar data={distData} options={chartOptions} />
+      <div className="chart-card leaderboard-card">
+        <h3>🏆 Top 10 Zones</h3>
+        <div className="classement-list">
+          {topZones.map((zone, idx) => (
+            <div key={zone.code_commune} className="classement-item" onClick={() => onSelectZone(zone)}>
+              <span className={`classement-rank ${idx < 3 ? `top-${idx+1}` : ''}`}>#{idx + 1}</span>
+              <span className="classement-name">{zone.nom_commune}</span>
+              <span className="classement-score">{zone.score_total.toFixed(1)}</span>
+            </div>
+          ))}
+          {topZones.length === 0 && <span style={{fontSize: '12px', color: 'var(--text-muted)'}}>Aucune zone trouvée</span>}
         </div>
       </div>
-      
-      <div className="chart-card">
-        <h3>Top 10 Communes</h3>
-        <div style={{ height: '250px' }}>
-          <Bar data={topCommunesData} options={{...chartOptions, indexAxis: 'y'}} />
-        </div>
-      </div>
-      
-      <div className="chart-card">
-        <h3>Score Moyen par Département (Top 10)</h3>
-        <div style={{ height: '250px' }}>
-          <Line data={departementsData} options={chartOptions} />
-        </div>
-      </div>
-      
+
       <div className="chart-card">
         <h3>Répartition par Catégorie</h3>
         <div style={{ height: '250px' }}>
           <Pie data={categoriesData} options={pieOptions} />
         </div>
       </div>
+
     </section>
   );
 }

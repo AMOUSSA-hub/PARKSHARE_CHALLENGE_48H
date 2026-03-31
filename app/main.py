@@ -45,52 +45,66 @@ def get_zones(
     score_max: Optional[float] = Query(None, description="Score maximum"),
     categorie: Optional[str] = Query(None, description="Filtrer par catégorie"),
     search: Optional[str] = Query(None, description="Recherche par nom de commune"),
-    limit: Optional[int] = Query(None, description="Limiter le nombre de résultats"),
+    limit: Optional[int] = Query(25, description="Limiter le nombre de résultats"),
+    offset: Optional[int] = Query(0, description="Démarrage pour la pagination"),
     sort_by: Optional[str] = Query("score_total", description="Colonne de tri"),
     sort_order: Optional[str] = Query("desc", description="Ordre de tri (asc/desc)"),
 ):
-    """Retourne la liste des zones avec leurs scores depuis la table transformed_communes."""
-    query = "SELECT * FROM transformed_communes WHERE 1=1"
+    """Retourne la liste des zones avec leurs scores et le nombre total de résultats."""
+    base_query = " FROM transformed_communes WHERE 1=1"
     params: list = []
 
     if departement:
-        query += " AND code_departement = %s"
+        base_query += " AND code_departement = %s"
         params.append(departement)
     if score_min is not None:
-        query += " AND score_total >= %s"
+        base_query += " AND score_total >= %s"
         params.append(score_min)
     if score_max is not None:
-        query += " AND score_total <= %s"
+        base_query += " AND score_total <= %s"
         params.append(score_max)
     if categorie:
-        query += " AND categorie = %s"
+        base_query += " AND categorie = %s"
         params.append(categorie)
     if search:
-        query += " AND nom_commune LIKE %s"
+        base_query += " AND nom_commune ILIKE %s"
         params.append(f"%{search}%")
 
-    # Tri (validation basique des colonnes autorisées)
+    # 1. Obtenir le total (sans limit/offset)
+    count_query = "SELECT COUNT(*)" + base_query
+    
+    # 2. Obtenir les données
+    data_query = "SELECT *" + base_query
+    
+    # Tri
     allowed_sort = ["score_total", "nom_commune", "population", "nb_coproprietes", "rang_national"]
-    if sort_by in allowed_sort:
-        order = "ASC" if sort_order == "asc" else "DESC"
-        query += f" ORDER BY {sort_by} {order}"
-    else:
-        query += " ORDER BY score_total DESC"
+    sort_col = sort_by if sort_by in allowed_sort else "score_total"
+    order = "ASC" if sort_order == "asc" else "DESC"
+    data_query += f" ORDER BY {sort_col} {order}"
 
-    if limit:
-        query += " LIMIT %s"
-        params.append(limit)
+    # Pagination
+    data_query += " LIMIT %s OFFSET %s"
+    data_params = params + [limit, offset]
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(query, params)
+    
+    # Exécuter le COUNT
+    cur.execute(count_query, params)
+    total_count = cur.fetchone()["count"]
+    
+    # Exécuter le SELECT
+    cur.execute(data_query, data_params)
     rows = cur.fetchall()
+    
     cur.close()
     conn.close()
 
     zones = [dict(row) for row in rows]
     return {
-        "total": len(zones),
+        "total": total_count,
+        "limit": limit,
+        "offset": offset,
         "zones": zones
     }
 

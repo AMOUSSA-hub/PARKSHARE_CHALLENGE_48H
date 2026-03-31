@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 
-function DataTable({ zones, onSelectZone }) {
+function DataTable({ zones, totalZones, page, pageSize, onPageChange, onSelectZone }) {
   const [sortField, setSortField] = useState('rang_national');
   const [sortDirection, setSortDirection] = useState('asc');
+
+  const totalPages = Math.ceil(totalZones / pageSize);
+  const startIdx = (page - 1) * pageSize + 1;
+  const endIdx = Math.min(page * pageSize, totalZones);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -20,18 +24,13 @@ function DataTable({ zones, onSelectZone }) {
     return '';
   };
 
+  // We sort locally the CURRENT page for better UX, even if server-side sort is preferred
   const sortedZones = [...zones].sort((a, b) => {
     let aVal = a[sortField];
     let bVal = b[sortField];
-    
-    // Sort strings
     if (typeof aVal === 'string') {
-      return sortDirection === 'asc' 
-        ? aVal.localeCompare(bVal)
-        : bVal.localeCompare(aVal);
+      return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
-    
-    // Sort numbers
     return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
   });
 
@@ -39,7 +38,9 @@ function DataTable({ zones, onSelectZone }) {
     <section className="table-section">
       <div className="section-header">
         <h2>Détail des Zones</h2>
-        <span className="table-count">{zones.length} résultats</span>
+        <span className="table-count">
+          {totalZones > 0 ? `Affichage de ${startIdx}-${endIdx} sur ${totalZones.toLocaleString()}` : '0 résultat'}
+        </span>
       </div>
       
       <div className="table-wrapper">
@@ -91,6 +92,28 @@ function DataTable({ zones, onSelectZone }) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination-footer">
+          <button 
+            className="btn-pagination" 
+            disabled={page === 1} 
+            onClick={() => onPageChange(page - 1)}
+          >
+            Précédent
+          </button>
+          <div className="pagination-info">
+            Page <strong>{page}</strong> sur <strong>{totalPages}</strong>
+          </div>
+          <button 
+            className="btn-pagination" 
+            disabled={page === totalPages} 
+            onClick={() => onPageChange(page + 1)}
+          >
+            Suivant
+          </button>
+        </div>
+      )}
     </section>
   );
 }
